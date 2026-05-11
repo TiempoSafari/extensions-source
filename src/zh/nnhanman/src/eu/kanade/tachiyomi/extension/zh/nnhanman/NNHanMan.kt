@@ -12,7 +12,6 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Request
 import okhttp3.Response
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 
 class NNHanMan : HttpSource() {
 
@@ -25,23 +24,15 @@ class NNHanMan : HttpSource() {
 
     // ==================== Popular ====================
 
-    override fun popularMangaRequest(page: Int): Request {
-        return GET("$baseUrl/comics/all/ob/hits/st/all/page/$page", headers)
-    }
+    override fun popularMangaRequest(page: Int): Request = GET("$baseUrl/comics/all/ob/hits/st/all/page/$page", headers)
 
-    override fun popularMangaParse(response: Response): MangasPage {
-        return parseMangaList(response)
-    }
+    override fun popularMangaParse(response: Response): MangasPage = parseMangaList(response)
 
     // ==================== Latest ====================
 
-    override fun latestUpdatesRequest(page: Int): Request {
-        return GET("$baseUrl/comics/all/ob/time/st/all/page/$page", headers)
-    }
+    override fun latestUpdatesRequest(page: Int): Request = GET("$baseUrl/comics/all/ob/time/st/all/page/$page", headers)
 
-    override fun latestUpdatesParse(response: Response): MangasPage {
-        return parseMangaList(response)
-    }
+    override fun latestUpdatesParse(response: Response): MangasPage = parseMangaList(response)
 
     // ==================== Search ====================
 
@@ -54,7 +45,6 @@ class NNHanMan : HttpSource() {
             return GET(url, headers)
         }
 
-        // Filter-based browsing
         var category = "all"
         var orderBy = "time"
         var status = "all"
@@ -71,15 +61,11 @@ class NNHanMan : HttpSource() {
         return GET("$baseUrl/comics/$category/ob/$orderBy/st/$status/page/$page", headers)
     }
 
-    override fun searchMangaParse(response: Response): MangasPage {
-        return parseMangaList(response)
-    }
+    override fun searchMangaParse(response: Response): MangasPage = parseMangaList(response)
 
     // ==================== Manga Details ====================
 
-    override fun mangaDetailsRequest(manga: SManga): Request {
-        return GET(baseUrl + manga.url, headers)
-    }
+    override fun mangaDetailsRequest(manga: SManga): Request = GET(baseUrl + manga.url, headers)
 
     override fun mangaDetailsParse(response: Response): SManga {
         val doc = Jsoup.parse(response.body.string())
@@ -100,13 +86,10 @@ class NNHanMan : HttpSource() {
 
     // ==================== Chapter List ====================
 
-    override fun chapterListRequest(manga: SManga): Request {
-        return GET(baseUrl + manga.url, headers)
-    }
+    override fun chapterListRequest(manga: SManga): Request = GET(baseUrl + manga.url, headers)
 
     override fun chapterListParse(response: Response): List<SChapter> {
         val doc = Jsoup.parse(response.body.string())
-        // Chapters are listed as <a href="/comic/slug/chapter-XXXXX.html">
         val chapterLinks = doc.select("ul.chapter-list a, .chapter-list li a, ul li a[href*='/chapter-']")
         return chapterLinks.map { a ->
             SChapter.create().apply {
@@ -114,18 +97,14 @@ class NNHanMan : HttpSource() {
                 name = a.text().trim()
             }
         }
-        // Note: site already lists newest first
     }
 
     // ==================== Page List ====================
 
-    override fun pageListRequest(chapter: SChapter): Request {
-        return GET(baseUrl + chapter.url, headers)
-    }
+    override fun pageListRequest(chapter: SChapter): Request = GET(baseUrl + chapter.url, headers)
 
     override fun pageListParse(response: Response): List<Page> {
         val doc = Jsoup.parse(response.body.string())
-        // Images are lazy-loaded; src is in data-src or data-original
         val imgs = doc.select("table img, .chapter-content img, #chapter-content img, img[data-src], img[data-original]")
         return imgs.mapIndexed { index, img ->
             val url = img.attr("data-src").ifBlank {
@@ -137,15 +116,12 @@ class NNHanMan : HttpSource() {
         }
     }
 
-    override fun imageUrlParse(response: Response): String {
-        throw UnsupportedOperationException("Not used.")
-    }
+    override fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
 
     // ==================== Helpers ====================
 
     private fun parseMangaList(response: Response): MangasPage {
         val doc = Jsoup.parse(response.body.string())
-        // Comic items: <a href="/comic/slug.html"><img ...>...</a>
         val items = doc.select("ul.comic-list li, .book-list li, ul li:has(a[href*='/comic/'])")
         val mangas = items.mapNotNull { li ->
             val a = li.selectFirst("a[href*='/comic/']") ?: return@mapNotNull null
@@ -197,7 +173,7 @@ class NNHanMan : HttpSource() {
             CategoryOption("校園", "校園"),
             CategoryOption("耽美", "耽美"),
             CategoryOption("日漫", "日漫"),
-        )
+        ),
     )
 
     class OrderFilter : Filter.Select<OrderOption>(
@@ -205,7 +181,7 @@ class NNHanMan : HttpSource() {
         arrayOf(
             OrderOption("按时间", "time"),
             OrderOption("按热度", "hits"),
-        )
+        ),
     )
 
     class StatusFilter : Filter.Select<StatusOption>(
@@ -214,7 +190,7 @@ class NNHanMan : HttpSource() {
             StatusOption("全部", "all"),
             StatusOption("已完结", "completed"),
             StatusOption("连载中", "serialized"),
-        )
+        ),
     )
 }
 
